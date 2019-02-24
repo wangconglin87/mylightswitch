@@ -28,11 +28,6 @@ Description:    Leo's light switch.
 
 #include "OnBoard.h"
 
-/* HAL */
-#include "hal_lcd.h"
-#include "hal_led.h"
-#include "hal_key.h"
-
 /*********************************************************************
 * MACROS
 */
@@ -200,24 +195,6 @@ uint16 SampleApp_ProcessEvent( uint8 task_id, uint16 events )
                 SampleApp_MessageMSGCB( MSGpkt );
                 break;
                 
-                // Received whenever the device changes state in the network
-            case ZDO_STATE_CHANGE:
-                SampleApp_NwkState = (devStates_t)(MSGpkt->hdr.status);
-                if ( (SampleApp_NwkState == DEV_ZB_COORD)
-                    || (SampleApp_NwkState == DEV_ROUTER)
-                        || (SampleApp_NwkState == DEV_END_DEVICE) )
-                {
-                    // Start sending the periodic message in a regular interval.
-                    osal_start_timerEx( SampleApp_TaskID,
-                                       SAMPLEAPP_SEND_PERIODIC_MSG_EVT,
-                                       SAMPLEAPP_SEND_PERIODIC_MSG_TIMEOUT );
-                }
-                else
-                {
-                    // Device is no longer in the network
-                }
-                break;
-                
             default:
                 break;
             }
@@ -254,42 +231,46 @@ uint16 SampleApp_ProcessEvent( uint8 task_id, uint16 events )
 */
 void SampleApp_MessageMSGCB( afIncomingMSGPacket_t *pkt )
 {
+    struct DeviceInfo info;
+    
     switch ( pkt->clusterId )
     {
     case LEO_CLUSTERID:
-        if(osal_memcmp(pkt->cmd.Data, "info", 4)) {
+        switch (*(pkt->cmd.Data))
+        {
+        case GET_DEVICE_INFO: 
             
-            char name[] = "0000BASIC_LIGHT_SWITCH";
+            info.commandId = 0;
+            info.shortAddr = _NIB.nwkDevAddress;
+            osal_memcpy(info.extAddress, aExtendedAddress, Z_EXTADDR_LEN);
             
-            uint16 shortAddr;
-            osal_memcpy(&shortAddr, &_NIB.nwkDevAddress, sizeof(uint16));
-            
-            char itoa[] = {'0','1','2','3','4','5','6','7','8','9',
-            'A','B','C','D','E','F'};
-            name[3] = (char) itoa[0xF & shortAddr];
-            name[2] = (char) itoa[0xF & (shortAddr >> 4)];
-            name[1] = (char) itoa[0xF & (shortAddr >> 8)];
-            name[0] = (char) itoa[0xF & (shortAddr >> 12)];
-            
-            HalUARTWrite(HAL_UART_PORT_0, name, osal_strlen(name));
+            HalUARTWrite(HAL_UART_PORT_0, (uint8*) (&info), sizeof(info));
             
             AF_DataRequest(&Leo_Coordinator_DstAddr, &SampleApp_epDesc, 
                            LEO_CLUSTERID,
-                           osal_strlen(name),
-                           name,
+                           sizeof(info),
+                           (uint8*) (&info),
                            &SampleApp_TransID,
                            AF_DISCV_ROUTE,
                            AF_DEFAULT_RADIUS);
-        }
-        
-        if(osal_memcmp(pkt->cmd.Data, "on", 2)) {
+            break;
+            
+        case SWITCH_ON: 
             P1_0 = 1;
-        }
-        
-        if(osal_memcmp(pkt->cmd.Data, "off", 3)) {
+            break;
+            
+        case SWITCH_OFF: 
             P1_0 = 0;
+            break;
+            
+        case SWITCH_TOGGLE: 
+            if (1 == P1_0) {
+                P1_0 = 0;
+            } else {
+                P1_0 = 1;   
+            }
+            break;
         }
-        break;
     }
 }
 
@@ -310,7 +291,7 @@ static void Handle_UartEvent(uint8 port, uint8 event)
                 HalUARTRead(HAL_UART_PORT_0, rxbuf, rxbuflen);
                 //HalUARTWrite(HAL_UART_PORT_0, rxbuf, rxbuflen);
                 
-                if (osal_memcmp(rxbuf, "on", 2) ) {
+                if (*rxbuf == 1) {
                     P1_0 = 1;
                 } else {
                     P1_0 = 0;

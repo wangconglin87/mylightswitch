@@ -68,22 +68,20 @@ extern "C"
 #define SAMPLEAPP_FLASH_CLUSTERID     2
 #define LEO_CLUSTERID 3
 
-// Send Message Timeout
-#define SAMPLEAPP_SEND_PERIODIC_MSG_TIMEOUT   5000     // Every 5 seconds
-
-// Application Events (OSAL) - These are bit weighted definitions.
-#define SAMPLEAPP_SEND_PERIODIC_MSG_EVT       0x0001
-  
-// Group ID for Flash Command
-#define SAMPLEAPP_FLASH_GROUP                  0x0001
-  
-// Flash Command Duration - in milliseconds
-#define SAMPLEAPP_FLASH_DURATION               1000
-
+#define GET_DEVICE_INFO 0
+#define SWITCH_ON       1   
+#define SWITCH_OFF      2
+#define SWITCH_TOGGLE   3     
 /*********************************************************************
- * MACROS
+ * Struct
  */
-
+    struct DeviceInfo {
+        char commandId;
+        uint16 shortAddr;
+        uint8 extAddress[8];
+    };
+    
+    
 /*********************************************************************
  * FUNCTIONS
  */
