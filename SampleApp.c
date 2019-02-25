@@ -240,7 +240,7 @@ void SampleApp_MessageMSGCB( afIncomingMSGPacket_t *pkt )
         {
         case GET_DEVICE_INFO: 
             
-            info.commandId = 0;
+            info.commandId = 0x7C00;
             info.shortAddr = _NIB.nwkDevAddress;
             osal_memcpy(info.extAddress, aExtendedAddress, Z_EXTADDR_LEN);
             

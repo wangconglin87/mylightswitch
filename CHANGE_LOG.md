@@ -6,8 +6,11 @@
 #define SWITCH_TOGGLE   3    
 
 struct DeviceInfo {
-    char commandId;
+    uint16 commandId;
     uint16 shortAddr;
     uint8 extAddress[8];
 };
 ```
+
+### 2019-02-25
+因为内存对齐为2字节，所以将commmandId从char改为unsigned int。

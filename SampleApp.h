@@ -76,7 +76,7 @@ extern "C"
  * Struct
  */
     struct DeviceInfo {
-        char commandId;
+        uint16 commandId;
         uint16 shortAddr;
         uint8 extAddress[8];
     };
